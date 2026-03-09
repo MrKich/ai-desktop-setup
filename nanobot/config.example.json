@@ -1,0 +1,61 @@
+{
+  "agents": {
+    "defaults": {
+      "workspace": "~/.nanobot/workspace",
+      "model": "qwen3.5-35b",
+      "provider": "custom",
+      "maxTokens": 262144,
+      "temperature": 1.0
+    }
+  },
+  "channels": {
+    "sendProgress": true,
+    "sendToolHints": true,
+    "telegram": {
+      "enabled": true,
+      "token": YOUR_TG_BOT_TOKEN,
+      "allowFrom": [YOUT_TG_USERNAME],
+      "replyToMessage": false
+    }
+  },
+  "providers": {
+    "custom": {
+      "apiKey": "EMPTY",
+      "apiBase": "http://llama-swap:8080/v1"
+    }
+  },
+  "gateway": {
+    "host": "0.0.0.0",
+    "port": 18790,
+    "heartbeat": {
+      "enabled": true,
+      "intervalS": 1800
+    }
+  },
+  "tools": {
+    "exec": {
+      "timeout": 60,
+      "pathAppend": ""
+    },
+    "restrictToWorkspace": true,
+    "mcpServers": {
+      "searxng": {
+        "args": [
+          "-y",
+          "mcp-searxng"
+        ],
+        "command": "npx",
+        "env": {
+          "SEARXNG_URL": "http://searxng:8080"
+        }
+      },
+      "sequential-thinking": {
+        "args": [
+          "-y",
+          "@modelcontextprotocol/server-sequential-thinking"
+        ],
+        "command": "npx"
+      }
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "mcpServers": {
+    "searxng": {
+      "args": [
+        "-y",
+        "mcp-searxng"
+      ],
+      "command": "npx",
+      "env": {
+        "SEARXNG_URL": "http://searxng:8080"
+      }
+    },
+    "sequential-thinking": {
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ],
+      "command": "npx"
+    }
+  }
+}

@@ -1,0 +1,23 @@
+healthCheckTimeout: 900
+logLevel: debug
+logTimeFormat: rfc3339nano
+logToStdout: both
+metricsMaxInMemory: 1000
+
+models:
+  qwen3.5-2b: &qwen-base
+    concurrencyLimit: 10
+    proxy: "http://${MODEL_ID}:${PORT}"
+    cmd: /bin/sh -c 'LLAMA_ARG_PORT=${PORT} docker compose up ${MODEL_ID}'
+    cmdStop: docker compose stop ${MODEL_ID}
+    ttl: 300
+
+  qwen3.5-35b:
+    <<: *qwen-base
+
+groups:
+  tiny:
+    exclusive: false
+    members:
+      - qwen3.5-2b
+    persistent: true

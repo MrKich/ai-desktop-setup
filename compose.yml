@@ -1,0 +1,202 @@
+name: ai-desktop
+services:
+  .model-defaults:
+    command:
+      - >-
+        exec
+        /app/llama-server
+        -hf
+        $$MODEL
+        $$MODEL_PARAMS_DEFAULT
+        $$MODEL_THINKING_DEFAULT
+        $$MODEL_PARAMS_EXTRA
+    entrypoint:
+      - /bin/sh
+      - -c
+    environment:
+      LLAMA_ARG_HOST: 0.0.0.0
+      LLAMA_ARG_PORT: ${LLAMA_ARG_PORT:-8080}
+      MODEL: ""
+      MODEL_PARAMS_DEFAULT: >
+        --top-k 20
+        --top-p 0.95
+        --min-p 0.00
+      MODEL_PARAMS_EXTRA: ""
+      MODEL_THINKING_DEFAULT: >
+        --chat-template-kwargs
+        {"enable_thinking":true}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${LLAMA_ARG_PORT:-8080}/health"]
+    image: ghcr.io/ggml-org/llama.cpp:server-cuda13-b8234
+    networks: [models]
+    profiles: [models]
+    restart: unless-stopped
+    runtime: nvidia
+    volumes:
+      - ./models:/root/.cache/llama.cpp
+
+  mcpo:
+    command:
+      - --config
+      - /etc/mcpo/config.json
+      - --hot-reload
+    image: ghcr.io/open-webui/mcpo:main
+    restart: unless-stopped
+    volumes:
+      - ./mcpo/config.json:/etc/mcpo/config.json:ro
+
+  nanobot:
+    build:
+      context: ./images/nanobot
+    image: my-nanobot:latest
+    restart: unless-stopped
+    volumes:
+      - ./nanobot/config.json:/app/.nanobot/config.json:ro
+      - ./nanobot/cron:/app/.nanobot/cron
+      - ./nanobot/media:/app/.nanobot/media
+      - ./nanobot/workspace:/app/.nanobot/workspace
+
+  llama-swap:
+    build:
+      context: ./images/llama-swap
+    command:
+      - -watch-config
+    image: my-llama-swap:latest
+    networks:
+      - default
+      - models
+    ports:
+      - 3001:8080
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${PWD}/:${PWD}:ro
+      - ./llama-swap/config.yaml:/app/config.yaml:ro
+    working_dir: ${PWD}
+
+  # TODO: jupyter?
+
+  searxng:
+    environment:
+      SEARXNG_DEBUG: 'true' #TODO: remove
+      SEARXNG_SECRET: ${SEARXNG_SECRET:?}
+    image: searxng/searxng:2026.3.6-0716de6bc
+    restart: unless-stopped
+    volumes:
+      - ./searxng/config:/etc/searxng:ro
+      - ./searxng/data:/var/cache/searxng
+
+  terminal:
+    environment:
+      EXECUTE_TIMEOUT: '60'
+      OPEN_TERMINAL_API_KEY: ${OPEN_TERMINAL_API_KEY:?}
+      OPEN_TERMINAL_BINARY_MIME_PREFIXES: audio,image
+    image: ghcr.io/open-webui/open-terminal:0.10.2
+    restart: unless-stopped
+    volumes:
+      - ./terminal/data:/data
+    working_dir: /data
+
+  webui:
+    environment:
+      AUTOCOMPLETE_GENERATION_INPUT_MAX_LENGTH: '262144'
+      # AUDIO_STT_ENGINE # TODO
+      DEFAULT_MODEL_METADATA: >
+        {"defaultFeatureIds": ["code_interpreter", "web_search"]}
+      DEFAULT_MODEL_PARAMS: >
+        {"function_calling": "native"}
+      DEFAULT_LOCALE: ru
+      ENABLE_API_KEYS: 'true'
+      ENABLE_AUDIT_STDOUT: 'true'
+      ENABLE_AUDIT_LOGS_FILE: 'false'
+      ENABLE_AUTOCOMPLETE_GENERATION: 'true'
+      ENABLE_BASE_MODELS_CACHE: 'true'
+      ENABLE_CHANNELS: 'false'
+      ENABLE_COMMUNITY_SHARING: 'false'
+      ENABLE_EVALUATION_ARENA_MODELS: 'false'
+      # ENABLE_IMAGE_GENERATION: 'true' # TODO
+      ENABLE_OPENAI_API: 'true'
+      ENABLE_OLLAMA_API: 'false'
+      ENABLE_NOTES: 'false'
+      ENABLE_PERSISTENT_CONFIG: 'false'
+      ENABLE_PIP_INSTALL_FRONTMATTER_REQUIREMENTS: 'false' # TODO: mb need to customize Dockerfile after this
+      ENABLE_SIGNUP: 'false'
+      ENABLE_WEB_SEARCH: 'true'  # TODO enable for searxng or other
+      ENV: prod
+      # DEFAULT_PROMPT_SUGGESTIONS # TODO: need to configure that somehere (mb not in this env)
+      HF_HUB_OFFLINE: '1'
+      OFFLINE_MODE: 'true'
+      OPENAI_API_BASE_URL: http://llama-swap:8080/v1
+      MODELS_CACHE_TTL: '60'
+      RESET_CONFIG_ON_START: 'true'
+      SEARXNG_QUERY_URL: http://searxng:8080/search?q=<query>
+      TASK_MODEL_EXTERNAL: qwen3.5-2b
+      TOOL_SERVER_CONNECTIONS: >
+        [
+          {
+            "type": "openapi",
+            "url": "http://mcpo:8000/sequential-thinking",
+            "spec_type": "url",
+            "spec": "",
+            "path": "openapi.json",
+            "auth_type": "none",
+            "key": "",
+            "config": { "enable": true },
+            "info": {
+              "id": "sequential-thinking",
+              "name": "sequential-thinking",
+              "description": ""
+            }
+          }
+        ]
+      TERMINAL_SERVER_CONNECTIONS: >
+        [
+          {
+            "id": "main",
+            "url": "http://terminal:8000",
+            "key": "${OPEN_TERMINAL_API_KEY}",
+            "name": "Main Terminal"
+          }
+        ]
+      USER_PERMISSIONS_WORKSPACE_MODELS_ACCESS: 'false'
+      USER_PERMISSIONS_WORKSPACE_TOOLS_ACCESS: 'false'
+      WEB_LOADER_TIMEOUT: '10'
+      WEB_SEARCH_CONCURRENT_REQUESTS: '1'
+      WEB_SEARCH_ENGINE: searxng
+      WEBUI_ADMIN_EMAIL: ${WEBUI_ADMIN_EMAIL:?}
+      WEBUI_ADMIN_NAME: ${WEBUI_ADMIN_NAME:?}
+      WEBUI_ADMIN_PASSWORD: ${WEBUI_ADMIN_PASSWORD:?}
+      WEBUI_SECRET_KEY: ${WEBUI_SECRET_KEY:?}
+    image: ghcr.io/open-webui/open-webui:v0.8.10
+    ports:
+      - 3000:8080
+    restart: unless-stopped
+    volumes:
+      - ./webui/data:/app/backend/data
+
+  # Models
+  qwen3.5-2b:
+    extends: .model-defaults
+    environment:
+      MODEL: unsloth/Qwen3.5-0.8B-GGUF:UD-Q4_K_XL
+      MODEL_PARAMS_EXTRA: >
+        --temp 0.7
+      MODEL_THINKING_DEFAULT: >
+        --chat-template-kwargs
+        {"enable_thinking":false}
+    runtime: ''
+
+  qwen3.5-35b:
+    extends: .model-defaults
+    environment:
+      MODEL: unsloth/Qwen3.5-35B-A3B-GGUF:MXFP4_MOE
+      MODEL_PARAMS_EXTRA: >
+        --temp 1.0
+        --kv-unified
+        --cache-type-k q8_0 --cache-type-v q8_0
+        --flash-attn on
+        --batch-size 4096 --ubatch-size 1024
+        --ctx-size 131072
+
+networks:
+  models:

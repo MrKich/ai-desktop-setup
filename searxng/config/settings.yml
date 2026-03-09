@@ -1,0 +1,18 @@
+use_default_settings:
+  engines:
+    remove:
+      - ahmia # tor
+      - duckduckgo # captcha
+      - google # empty results
+      - startpage # timeout
+      - torch # tor
+
+search:
+  autocomplete: ""
+  default_lang: ""
+  formats:
+    - html
+    - csv
+    - json
+    - rss
+  safe_search: 0
