@@ -54,7 +54,7 @@ services:
       - ./nanobot/config.json:/app/.nanobot/config.json:ro
       - ./nanobot/cron:/app/.nanobot/cron
       - ./nanobot/media:/app/.nanobot/media
-      - ./nanobot/workspace:/app/.nanobot/workspace
+      - ./nanobot/workspace:/app/workspace
 
   llama-swap:
     build:
