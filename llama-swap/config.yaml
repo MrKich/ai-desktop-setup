@@ -1,7 +1,7 @@
 healthCheckTimeout: 900
 logLevel: debug
 logTimeFormat: rfc3339nano
-logToStdout: both
+logToStdout: proxy
 metricsMaxInMemory: 1000
 
 models:

@@ -10,7 +10,7 @@
   },
   "channels": {
     "sendProgress": true,
-    "sendToolHints": true,
+    "sendToolHints": false,
     "telegram": {
       "enabled": true,
       "token": YOUR_TG_BOT_TOKEN,
@@ -37,18 +37,15 @@
       "timeout": 60,
       "pathAppend": ""
     },
+    "web": {
+      "proxy": "socks5://xray:1080",
+      "search": {
+        "provider": "searxng",
+        "base_url": "http://searxng:8080"
+      }
+    },
     "restrictToWorkspace": true,
     "mcpServers": {
-      "searxng": {
-        "args": [
-          "-y",
-          "mcp-searxng"
-        ],
-        "command": "npx",
-        "env": {
-          "SEARXNG_URL": "http://searxng:8080"
-        }
-      },
       "sequential-thinking": {
         "args": [
           "-y",

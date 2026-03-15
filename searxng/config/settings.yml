@@ -7,6 +7,11 @@ use_default_settings:
       - startpage # timeout
       - torch # tor
 
+outgoing:
+  proxies:
+    all://:
+      - socks5://xray:1080
+
 search:
   autocomplete: ""
   default_lang: ""
