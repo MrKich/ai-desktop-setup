@@ -1,4 +1,4 @@
-FROM ghcr.io/mostlygeek/llama-swap:v197-cuda-b8193
+FROM ghcr.io/mostlygeek/llama-swap:v198-cuda-b8352
 
 RUN apt update -yq && \
     apt install -y --no-install-recommends \

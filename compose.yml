@@ -16,6 +16,7 @@ services:
     environment:
       LLAMA_ARG_HOST: 0.0.0.0
       LLAMA_ARG_PORT: ${LLAMA_ARG_PORT:-8080}
+      LLAMA_CACHE: /models
       MODEL: ""
       MODEL_PARAMS_DEFAULT: >
         --top-k 20
@@ -33,7 +34,7 @@ services:
     restart: unless-stopped
     runtime: nvidia
     volumes:
-      - ./models:/root/.cache/llama.cpp
+      - ./models:/models
 
   mcpo:
     command:
@@ -124,7 +125,13 @@ services:
   webui:
     environment:
       AUTOCOMPLETE_GENERATION_INPUT_MAX_LENGTH: '262144'
-      # AUDIO_STT_ENGINE # TODO
+      AUDIO_STT_ENGINE: openai
+      AUDIO_STT_OPENAI_API_BASE_URL: http://llama-swap:8080/v1
+      AUDIO_STT_MODEL: whisper-large-v3
+      AUDIO_TTS_ENGINE: openai
+      AUDIO_TTS_OPENAI_API_BASE_URL: http://llama-swap:8080/v1
+      AUDIO_TTS_MODEL: orpheus-3b
+      AUDIO_TTS_VOICE: tara
       DEFAULT_MODEL_METADATA: >
         {"defaultFeatureIds": ["code_interpreter", "web_search"]}
       DEFAULT_MODEL_PARAMS: >
@@ -211,6 +218,16 @@ services:
       - ./xray/config.json:/etc/xray/config.json:ro
 
   # Models
+  orpheus-3b:
+    extends: .model-defaults
+    environment:
+      MODEL: unsloth/orpheus-3b-0.1-ft-GGUF:UD-Q4_K_XL
+      MODEL_PARAMS_DEFAULT: ''
+      MODEL_PARAMS_EXTRA: >
+        --temp 0.6
+        --repeat-penalty 1.1
+      MODEL_THINKING_DEFAULT: ''
+
   qwen3.5-2b:
     extends: .model-defaults
     environment:
@@ -233,6 +250,16 @@ services:
         --flash-attn on
         --batch-size 4096 --ubatch-size 1024
         --ctx-size 131072
+
+  whisper-large-v3:
+    extends: .model-defaults
+    command:
+      - >-
+        /app/models/download-ggml-model.sh "$$MODEL" /models &&
+        exec whisper-server --host 0.0.0.0 --port "$$LLAMA_ARG_PORT" --request-path /v1/audio/transcriptions --inference-path "" -m "/models/ggml-$$MODEL.bin"
+    environment:
+      MODEL: large-v3-q5_0
+    image: ghcr.io/ggml-org/whisper.cpp:main-cuda
 
 networks:
   models:
