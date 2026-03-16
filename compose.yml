@@ -48,6 +48,8 @@ services:
   nanobot:
     build:
       context: ./images/nanobot
+    environment:
+      JINA_API_KEY: ${JINA_API_KEY:?}
     image: my-nanobot:latest
     restart: unless-stopped
     volumes:
@@ -74,11 +76,33 @@ services:
       - ./llama-swap/config.yaml:/app/config.yaml:ro
     working_dir: ${PWD}
 
-  # TODO: jupyter?
+  playwright:
+    command:
+      - --allowed-hosts
+      - '*'
+      - --host
+      - 0.0.0.0
+      - --port
+      - '8931'
+      - --caps
+      - config,pdf
+      - --console-level
+      - info
+      - --proxy-server
+      - socks5://xray:1080
+      - --user-agent
+      - 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Mobile Safari/537.36'
+      - --user-data-dir
+      - /app/playwright
+      - --viewport-size
+      - 1280x720
+    image: mcr.microsoft.com/playwright/mcp:v0.0.68
+    restart: unless-stopped
+    volumes:
+      - ./playwright/data:/app/playwright
 
   searxng:
     environment:
-      SEARXNG_DEBUG: 'true' #TODO: remove
       SEARXNG_SECRET: ${SEARXNG_SECRET:?}
     image: searxng/searxng:2026.3.6-0716de6bc
     restart: unless-stopped

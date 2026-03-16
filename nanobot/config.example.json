@@ -4,7 +4,7 @@
       "workspace": "~/.nanobot/workspace",
       "model": "qwen3.5-35b",
       "provider": "custom",
-      "maxTokens": 262144,
+      "maxTokens": 131072,
       "temperature": 1.0
     }
   },
@@ -15,7 +15,8 @@
       "enabled": true,
       "token": YOUR_TG_BOT_TOKEN,
       "allowFrom": [YOUT_TG_USERNAME],
-      "replyToMessage": false
+      "replyToMessage": false,
+      "proxy": "socks5://xray:1080"
     }
   },
   "providers": {
@@ -46,6 +47,9 @@
     },
     "restrictToWorkspace": true,
     "mcpServers": {
+      "playwright": {
+        "url": "http://playwright:8931/mcp"
+      },
       "sequential-thinking": {
         "args": [
           "-y",
